@@ -1,0 +1,12 @@
+{
+  "name": "lector-nfc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplicación web progresiva para leer y escribir etiquetas NFC con Web NFC.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
