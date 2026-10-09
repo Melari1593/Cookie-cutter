@@ -25,6 +25,7 @@ const molds = [];
 let activeId = null;
 let nextId = 1;
 let current = null; // { moldId, layers, shape, group }
+let zipping = false;
 
 // ---------- Carga de archivos ----------
 
@@ -137,7 +138,7 @@ function renderList() {
       return li;
     }),
   );
-  els.downloadAll.disabled = molds.length < 1;
+  els.downloadAll.disabled = zipping || molds.length < 1;
 }
 
 function select(id) {
@@ -245,6 +246,8 @@ function update() {
   setStatus('Procesando…');
   // Ceder un fotograma para que el mensaje se pinte antes del cálculo.
   requestAnimationFrame(() => setTimeout(() => {
+    // El molde pudo quitarse o cambiarse mientras se esperaba el fotograma.
+    if (activeId !== mold.id) return;
     try {
       const t0 = performance.now();
       const result = convert(mold, p);
@@ -297,16 +300,20 @@ els.download.addEventListener('click', () => {
 });
 
 els.downloadAll.addEventListener('click', async () => {
-  if (!molds.length) return;
+  if (zipping || !molds.length) return;
   const p = readParams();
   const invalid = validate(p);
   if (invalid) return setStatus(invalid, true);
   if (typeof JSZip === 'undefined') return setStatus('No se pudo cargar la librería ZIP.', true);
+  zipping = true;
+  els.downloadAll.disabled = true;
+  // Copia de la lista: el usuario puede añadir o quitar moldes mientras se genera.
+  const batch = [...molds];
   const zip = new JSZip();
   const used = new Set();
   const failed = [];
-  for (const [i, mold] of molds.entries()) {
-    setStatus(`Generando ${i + 1} de ${molds.length}: ${mold.name}…`);
+  for (const [i, mold] of batch.entries()) {
+    setStatus(`Generando ${i + 1} de ${batch.length}: ${mold.name}…`);
     await new Promise((r) => setTimeout(r, 0));
     try {
       const group = buildModel(convert(mold, p).layers, material);
@@ -319,7 +326,12 @@ els.downloadAll.addEventListener('click', async () => {
       failed.push(`${mold.name} (${err.message})`);
     }
   }
-  if (used.size) saveBlob(await zip.generateAsync({ type: 'blob' }), 'moldes-stl.zip');
+  try {
+    if (used.size) saveBlob(await zip.generateAsync({ type: 'blob' }), 'moldes-stl.zip');
+  } finally {
+    zipping = false;
+    els.downloadAll.disabled = molds.length < 1;
+  }
   setStatus(
     failed.length ? `No se pudieron convertir: ${failed.join('; ')}` : `${used.size} archivo(s) STL exportados.`,
     failed.length > 0,
@@ -450,6 +462,7 @@ function setStatus(text, isError = false) {
 }
 
 function clearOutput() {
+  clearTimeout(updateTimer);
   current = null;
   setModel(null);
   clearPreview();
