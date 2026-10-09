@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moldes a STL</title>
+  <meta name="description" content="Convierte moldes en JPEG, PNG o SVG en archivos STL de cortadores de galletas listos para imprimir en 3D.">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      },
+      "integrity": {
+        "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js": "sha384-61S/Nu32S3E5+n+KpCOTb2eRYps6fVKm+9Gz1QBvSePFthb46f063Aa/qe/lykFZ",
+        "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js": "sha384-qlO/ZugKPxAQUAvTlQoo0QECzxJIJySZmCF/DHdb2Xn/hHndFwX/vfUAC9Hbk6LP",
+        "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/exporters/STLExporter.js": "sha384-asFNg7wL3Pl1xb8Wnx91cfhJVpmwKWIfOBKZaXNqPDWTLajmNiNQWXd5sP71UzcR"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Moldes a STL</h1>
+    <p>Sube tus moldes en JPEG, PNG o SVG y descárgalos como STL para imprimir en 3D.</p>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section>
+        <label id="dropzone" class="dropzone" for="file-input" tabindex="0">
+          <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml" multiple hidden>
+          <strong>Arrastra tus moldes aquí</strong>
+          <span>o haz clic para elegir archivos (.jpg, .jpeg, .png, .svg)</span>
+        </label>
+        <ul id="file-list" class="file-list" aria-label="Moldes cargados"></ul>
+      </section>
+
+      <form id="params" class="params" autocomplete="off">
+        <fieldset>
+          <legend>Tipo de modelo</legend>
+          <label class="radio"><input type="radio" name="mode" value="cutter" checked> Cortador de galletas</label>
+          <label class="radio"><input type="radio" name="mode" value="solid"> Figura sólida (extrusión)</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Medidas (mm)</legend>
+          <label>Tamaño de la figura (lado mayor) <input type="number" name="size" value="80" min="5" max="400" step="1"></label>
+          <label>Altura <input type="number" name="height" value="15" min="1" max="100" step="0.5"></label>
+          <label data-mode="cutter">Grosor de pared <input type="number" name="wall" value="1.2" min="0.4" max="10" step="0.1"></label>
+          <label data-mode="cutter">Ancho de pestaña <input type="number" name="flangeWidth" value="4" min="0" max="30" step="0.5"></label>
+          <label data-mode="cutter">Altura de pestaña <input type="number" name="flangeHeight" value="1.5" min="0" max="20" step="0.1"></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Detección de la figura</legend>
+          <label>Método
+            <select name="detect">
+              <option value="auto">Automático</option>
+              <option value="brightness">Zonas oscuras</option>
+              <option value="alpha">Transparencia (PNG/SVG)</option>
+            </select>
+          </label>
+          <label>Umbral <span class="range"><input type="range" name="threshold" min="1" max="254" value="128"><output name="thresholdOut">128</output></span></label>
+          <label class="check"><input type="checkbox" name="invert"> Invertir (figura clara sobre fondo oscuro)</label>
+          <label class="check"><input type="checkbox" name="fillHoles" checked> Usar solo la silueta exterior</label>
+          <label>Ignorar manchas menores a (mm²) <input type="number" name="minArea" value="4" min="0" max="500" step="1"></label>
+          <label>Calidad
+            <select name="quality">
+              <option value="5">Rápida</option>
+              <option value="8" selected>Normal</option>
+              <option value="12">Alta</option>
+            </select>
+          </label>
+        </fieldset>
+      </form>
+    </aside>
+
+    <section class="preview">
+      <div class="views">
+        <figure class="view">
+          <figcaption>Contorno detectado</figcaption>
+          <canvas id="preview2d"></canvas>
+        </figure>
+        <figure class="view">
+          <figcaption>Vista 3D <small>(arrastra para girar)</small></figcaption>
+          <div id="viewer3d"></div>
+        </figure>
+      </div>
+      <div class="status-row">
+        <p id="status" role="status">Sube un molde para empezar.</p>
+        <div class="actions">
+          <button id="download" type="button" disabled>Descargar STL</button>
+          <button id="download-all" type="button" class="secondary" disabled>Descargar todos (.zip)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
